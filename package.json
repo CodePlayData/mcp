@@ -1,0 +1,37 @@
+{
+  "name": "@codeplaydata/mcp",
+  "version": "1.0.0",
+  "main": "./src/index.js",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "publish": "npm publish --access=public",
+    "dev": "node dist/main.js",
+    "inspect": "npx -y @modelcontextprotocol/inspector"
+  },
+  "keywords": [
+    "LLM",
+    "MCP",
+    "Tools"
+  ],
+  "files": [
+    "src/"
+  ],
+  "author": "Pedro Paulo dos Santos (dr2p) - https://github.com/dr2pedro",
+  "license": "AGPLv3",
+  "bugs": {
+    "url": "https://github.com/CodePlayData/mcp/issues"
+  },
+  "homepage": "https://github.com/CodePlayData/mcp#readme",
+  "description": "The MCP library that encapsulates all the behavioral of the model context protocol typescript sdk.",
+  "devDependencies": {
+    "@types/express": "^5.0.3",
+    "@types/node": "^24.0.0",
+    "typescript": "^5.8.3"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.1",
+    "express": "^5.1.0",
+    "zod": "^3.25.57"
+  }
+}
