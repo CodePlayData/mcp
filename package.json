@@ -1,6 +1,6 @@
 {
   "name": "@codeplaydata/mcp",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "main": "./src/index.js",
   "type": "module",
   "scripts": {
@@ -26,11 +26,11 @@
   "description": "The MCP library that encapsulates all the behavioral of the model context protocol typescript sdk.",
   "devDependencies": {
     "@types/express": "^5.0.3",
-    "@types/node": "^24.0.0",
+    "@types/node": "^24.0.15",
     "typescript": "^5.8.3",
     "express": "^5.1.0"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.12.1"
+    "@modelcontextprotocol/sdk": "^1.16.0"
   }
 }
