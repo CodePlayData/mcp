@@ -19,7 +19,6 @@
 */
 
 import express, { Request, Response } from "express";
-import { InMemoryEventStore } from "./infra/InMemoryEventStore.js";
 import { InMemorySessionStorage } from "./infra/InMemorySessionStorage.js";
 import { MCPController } from "./interface/MCPController.js";
 import { FakeAuthenticationGateway } from "./infra/FakeAuthenticationGateway.js";
@@ -32,7 +31,6 @@ import { UserIdTemplate } from "./infra/UserIdTemplate.js";
 const app = express();
 app.use(express.json());
 
-const eventStore = new InMemoryEventStore();
 const sessionStorage = new InMemorySessionStorage();
 const authenticationGateway = new FakeAuthenticationGateway();
 
@@ -40,9 +38,6 @@ const tool = new GreeterTool();
 const prompt = new CallMePrompt();
 const resource = new UserIdResource();
 const resourceTemplate = new UserIdTemplate();
-
-const MCP_SERVER_VERSION = "0.1.1";
-const MCP_SERVER_INSTRUCTIONS = "Some MCP server to teste in the inspector.";
 
 const mcpServerFactory = McpServerFactory.instanceOf();
 

@@ -40,8 +40,9 @@ import {PromptStore} from "./PromptStore.js";
 import {InMemoryPromptStore} from "../infra/InMemoryPromptStore.js";
 import {ToolStore} from "./ToolStore.js";
 import {InMemoryToolStore} from "../infra/InMemoryToolStore.js";
-import {ResourceStore} from "./ResourceStore";
+import {ResourceStore} from "./ResourceStore.js";
 import {InMemoryResourceStore} from "../infra/InMemoryResourceStore.js";
+import {ServerBuilder} from "./ServerBuilder.js";
 
 export class McpServerFactory {
     private static instance: McpServerFactory | null = null;
@@ -76,7 +77,7 @@ export class McpServerFactory {
         toolStore?: ToolStore,
         resourceStore?: ResourceStore,
         readonly MCP_SERVER_VERSION: string = "0.1.0",
-        readonly MCP_SERVER_INSTRUCTIONS: string = ""
+        readonly MCP_SERVER_INSTRUCTIONS: string = "Some testing MCP server."
     ) {};
 
     addTool(tool: Tool) {
@@ -95,83 +96,20 @@ export class McpServerFactory {
         if(!this.resourceStore) {
             this.resourceStore = new InMemoryResourceStore();
         }
+
         this.resourceStore?.register(resource);
     };
 
     private _createServer(userId: UserId) {
         const serverInfo: Implementation = { name: `server-id-${userId}`, version: this.MCP_SERVER_VERSION };
         const serverOptions = { instructions: this.MCP_SERVER_INSTRUCTIONS };
-        return new Server(serverInfo, serverOptions);
+        return new ServerBuilder(new Server(serverInfo, serverOptions), this);
     }
-    private _registerPrompts(server: Server) {
-        if (this.promptStore && this.promptStore.list().length > 0) {
-            server.registerCapabilities({
-                prompts: {
-                    listChanged: true
-                }
-            });
-            server.setRequestHandler(ListPromptsRequestSchema, () => {
-                return {
-                    prompts: this.promptStore?.list().map(prompt => prompt.schema)
-                }
-            });
-            server.setRequestHandler(GetPromptRequestSchema, this.promptStore.notify.bind(this.promptStore));
-        }
-        return server;
-    }
-    private _registerResources(server: Server) {
-        if (this.resourceStore && this.resourceStore.list().length > 0) {
-            server.registerCapabilities({
-                resources: {
-                    subscribe: true,
-                    listChanged: true
-                }
-            })
-            server.setRequestHandler(ListResourcesRequestSchema, () => ({
-                resources: this.resourceStore?.list()
-                    .filter(resource => resource.input.hasOwnProperty("schema"))
-                    .map(resource => (resource.input as { schema: ResourceSchema }).schema)
-            }));
-            server.setRequestHandler(ListResourceTemplatesRequestSchema, () => ({
-                resourceTemplates: this.resourceStore?.list()
-                    .filter(resource => resource.input.hasOwnProperty("template"))
-                    .map(resource => (resource.input as { template: ResourceTemplate }).template)
-            }));
-            server.setRequestHandler(ReadResourceRequestSchema, this.resourceStore.notify(server).bind(this.resourceStore));
-        }
-        return server;
-    }
-    private _registerTools(server: Server) {
-        if (this.toolStore && this.toolStore.list().length > 0) {
-            server.registerCapabilities({
-                tools: {
-                    listChanged: true
-                }
-            });
-            server.setRequestHandler(ListToolsRequestSchema, () => ({
-                tools: this.toolStore?.list().map(tool => tool.schema)
-            }));
-            server.setRequestHandler(CallToolRequestSchema, this.toolStore.notify(server).bind(this.toolStore));
-        }
-        return server;
-    }
-    private _createTransport(userId: UserId, sessionId: SessionId) {
-        return new StreamableHTTPServerTransport({
-            enableJsonResponse: false,
-            eventStore: this.eventStorage,
-            sessionIdGenerator: () => sessionId,
-            onsessioninitialized(sessionId: string): void {
-                console.log(`Session ${sessionId} created for the user ${userId}.`);
-            }
-        });
-    }
-
     create(userId: UserId, sessionId: SessionId) {
-        let server = this._createServer(userId);
-        server = this._registerPrompts(server);
-        server = this._registerResources(server);
-        server = this._registerTools(server);
-        const transport = this._createTransport(userId, sessionId);
-        return { server, transport };
+        return this._createServer(userId)
+            .registerPrompts()
+            .registerResources()
+            .registerTools()
+            .build(userId, sessionId);
     };
 }
