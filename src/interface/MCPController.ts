@@ -46,7 +46,7 @@ export class MCPController<Request extends BasicRequest, Response extends BasicR
         };
         session =  this.sessionStorage.createSession(sessionId, server, userId, transport)
         await session.server.connect(session.transport);
-        await session.transport.handleRequest(request, response, request.body).then(() => console.log("Request handled by transport."));
+        await session.transport.handleRequest(request, response, request.body);
         return
     };
     private getSessionId(request: Request, response: Response) {

@@ -34,7 +34,7 @@ export class CallMePrompt extends Prompt {
         });
     };
 
-    protected handle(request: GetPromptRequest, extra: RequestHandlerExtra<any, any>): Promise<GetPromptResult> {
+    handle(request: GetPromptRequest, extra: RequestHandlerExtra<any, any>): Promise<GetPromptResult> {
         console.log("a prompt was consulted: ", request)
         console.log("extra: ", extra)
 

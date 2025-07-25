@@ -18,48 +18,93 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-import { EventStore } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
+import {EventStore, StreamableHTTPServerTransport} from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import {
     CallToolRequestSchema,
     GetPromptRequestSchema,
     Implementation,
     ListPromptsRequestSchema,
-    ListResourcesRequestSchema, ListResourceTemplatesRequestSchema,
+    ListResourcesRequestSchema,
+    ListResourceTemplatesRequestSchema,
     ListToolsRequestSchema,
     ReadResourceRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
-import { Server }  from "@modelcontextprotocol/sdk/server/index.js";
-import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
-import { UserId } from "../core/UserId.js";
-import { SessionId } from "../core/SessionId.js";
-import { Prompt } from "../core/Prompt.js";
-import { Resource } from "../core/Resource.js";
-import { Tool } from "../core/Tool.js";
+import {Server} from "@modelcontextprotocol/sdk/server/index.js";
+import {UserId} from "../core/UserId.js";
+import {SessionId} from "../core/SessionId.js";
+import {Prompt} from "../core/Prompt.js";
+import {Resource, ResourceSchema, ResourceTemplate} from "../core/Resource.js";
+import {Tool} from "../core/Tool.js";
+import {InMemoryEventStore} from "../infra/InMemoryEventStore.js";
+import {PromptStore} from "./PromptStore.js";
+import {InMemoryPromptStore} from "../infra/InMemoryPromptStore.js";
+import {ToolStore} from "./ToolStore.js";
+import {InMemoryToolStore} from "../infra/InMemoryToolStore.js";
+import {ResourceStore} from "./ResourceStore";
+import {InMemoryResourceStore} from "../infra/InMemoryResourceStore.js";
 
 export class McpServerFactory {
-    private tools: Tool[] = [];
-    private prompts: Prompt[] = [];
-    private resources: Resource[] = [];
+    private static instance: McpServerFactory | null = null;
+    protected promptStore: PromptStore | undefined;
+    protected toolStore: ToolStore | undefined;
+    protected resourceStore: ResourceStore | undefined;
 
-    constructor(readonly eventStorage: EventStore, readonly MCP_SERVER_VERSION = "0.1.0", readonly MCP_SERVER_INSTRUCTIONS = "") {};
+    public static instanceOf(
+        eventStorage: EventStore = new InMemoryEventStore(),
+        promptStore?: PromptStore,
+        toolStore?: ToolStore,
+        resourceStore?: ResourceStore,
+        MCP_SERVER_VERSION?: string,
+        MCP_SERVER_INSTRUCTIONS?: string
+    ): McpServerFactory {
+        if (!McpServerFactory.instance) {
+            McpServerFactory.instance = new McpServerFactory(
+                eventStorage,
+                promptStore,
+                toolStore,
+                resourceStore,
+                MCP_SERVER_VERSION,
+                MCP_SERVER_INSTRUCTIONS
+            );
+        }
+        return McpServerFactory.instance;
+    }
+
+    private constructor(
+        readonly eventStorage: EventStore,
+        promptStore?: PromptStore,
+        toolStore?: ToolStore,
+        resourceStore?: ResourceStore,
+        readonly MCP_SERVER_VERSION: string = "0.1.0",
+        readonly MCP_SERVER_INSTRUCTIONS: string = ""
+    ) {};
 
     addTool(tool: Tool) {
-        this.tools.push(tool);
+        if(!this.toolStore) {
+            this.toolStore = new InMemoryToolStore();
+        }
+        this.toolStore?.register(tool);
     };
     addPrompt(prompt: Prompt) {
-        this.prompts.push(prompt);
+        if(!this.promptStore) {
+            this.promptStore = new InMemoryPromptStore();
+        }
+        this.promptStore?.register(prompt);
     };
     addResource(resource: Resource) {
-        this.resources.push(resource);
+        if(!this.resourceStore) {
+            this.resourceStore = new InMemoryResourceStore();
+        }
+        this.resourceStore?.register(resource);
     };
-    create(userId: UserId, sessionId: SessionId) {
-        const serverInfo: Implementation = {
-            name: `server-id-${userId}`,
-            version: this.MCP_SERVER_VERSION
-        };
+
+    private _createServer(userId: UserId) {
+        const serverInfo: Implementation = { name: `server-id-${userId}`, version: this.MCP_SERVER_VERSION };
         const serverOptions = { instructions: this.MCP_SERVER_INSTRUCTIONS };
-        const server = new Server(serverInfo, serverOptions);
-        if (this.prompts.length > 0) {
+        return new Server(serverInfo, serverOptions);
+    }
+    private _registerPrompts(server: Server) {
+        if (this.promptStore && this.promptStore.list().length > 0) {
             server.registerCapabilities({
                 prompts: {
                     listChanged: true
@@ -67,14 +112,15 @@ export class McpServerFactory {
             });
             server.setRequestHandler(ListPromptsRequestSchema, () => {
                 return {
-                    prompts: this.prompts.map(prompt => prompt.schema)
+                    prompts: this.promptStore?.list().map(prompt => prompt.schema)
                 }
             });
-            this.prompts.forEach(prompt => {
-                server.setRequestHandler(GetPromptRequestSchema, prompt.requestHandler)
-            });
+            server.setRequestHandler(GetPromptRequestSchema, this.promptStore.notify.bind(this.promptStore));
         }
-        if (this.resources.length > 0) {
+        return server;
+    }
+    private _registerResources(server: Server) {
+        if (this.resourceStore && this.resourceStore.list().length > 0) {
             server.registerCapabilities({
                 resources: {
                     subscribe: true,
@@ -82,29 +128,35 @@ export class McpServerFactory {
                 }
             })
             server.setRequestHandler(ListResourcesRequestSchema, () => ({
-                resources: this.resources.map(resource => resource.schema)
+                resources: this.resourceStore?.list()
+                    .filter(resource => resource.input.hasOwnProperty("schema"))
+                    .map(resource => (resource.input as { schema: ResourceSchema }).schema)
             }));
             server.setRequestHandler(ListResourceTemplatesRequestSchema, () => ({
-                resourceTemplates: this.resources.map(resource => resource.template)
+                resourceTemplates: this.resourceStore?.list()
+                    .filter(resource => resource.input.hasOwnProperty("template"))
+                    .map(resource => (resource.input as { template: ResourceTemplate }).template)
             }));
-            this.resources.forEach(resource => {
-                server.setRequestHandler(ReadResourceRequestSchema, resource.setServer(server).requestHandler)
-            });
+            server.setRequestHandler(ReadResourceRequestSchema, this.resourceStore.notify(server).bind(this.resourceStore));
         }
-        if (this.tools.length > 0) {
+        return server;
+    }
+    private _registerTools(server: Server) {
+        if (this.toolStore && this.toolStore.list().length > 0) {
             server.registerCapabilities({
                 tools: {
                     listChanged: true
                 }
             });
             server.setRequestHandler(ListToolsRequestSchema, () => ({
-                tools: this.tools.map(tool => tool.schema)
+                tools: this.toolStore?.list().map(tool => tool.schema)
             }));
-            this.tools.forEach(tool => {
-                server.setRequestHandler(CallToolRequestSchema, tool.setServer(server).requestHandler)
-            });
+            server.setRequestHandler(CallToolRequestSchema, this.toolStore.notify(server).bind(this.toolStore));
         }
-        const transport = new StreamableHTTPServerTransport({
+        return server;
+    }
+    private _createTransport(userId: UserId, sessionId: SessionId) {
+        return new StreamableHTTPServerTransport({
             enableJsonResponse: false,
             eventStore: this.eventStorage,
             sessionIdGenerator: () => sessionId,
@@ -112,6 +164,14 @@ export class McpServerFactory {
                 console.log(`Session ${sessionId} created for the user ${userId}.`);
             }
         });
+    }
+
+    create(userId: UserId, sessionId: SessionId) {
+        let server = this._createServer(userId);
+        server = this._registerPrompts(server);
+        server = this._registerResources(server);
+        server = this._registerTools(server);
+        const transport = this._createTransport(userId, sessionId);
         return { server, transport };
     };
 }

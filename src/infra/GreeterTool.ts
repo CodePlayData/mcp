@@ -37,7 +37,7 @@ export class GreeterTool extends Tool {
         });
     };
 
-    protected async handle(request: CallToolRequest, extra: RequestHandlerExtra<any, any>): Promise<CallToolResult> {
+    async handle(request: CallToolRequest, extra: RequestHandlerExtra<any, any>): Promise<CallToolResult> {
         console.log("tool request received: ", request)
         console.log("extra: ", extra)
 

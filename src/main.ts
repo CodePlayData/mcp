@@ -27,6 +27,7 @@ import { McpServerFactory } from "./app/McpServerFactory.js";
 import { GreeterTool } from "./infra/GreeterTool.js";
 import { CallMePrompt } from "./infra/CallMePrompt.js";
 import { UserIdResource } from "./infra/UserIdResource.js";
+import { UserIdTemplate } from "./infra/UserIdTemplate.js";
 
 const app = express();
 app.use(express.json());
@@ -38,15 +39,17 @@ const authenticationGateway = new FakeAuthenticationGateway();
 const tool = new GreeterTool();
 const prompt = new CallMePrompt();
 const resource = new UserIdResource();
+const resourceTemplate = new UserIdTemplate();
 
 const MCP_SERVER_VERSION = "0.1.1";
 const MCP_SERVER_INSTRUCTIONS = "Some MCP server to teste in the inspector.";
 
-const mcpServerFactory = new McpServerFactory(eventStore, MCP_SERVER_VERSION, MCP_SERVER_INSTRUCTIONS);
+const mcpServerFactory = McpServerFactory.instanceOf();
 
 mcpServerFactory.addTool(tool);
 mcpServerFactory.addPrompt(prompt);
 mcpServerFactory.addResource(resource);
+mcpServerFactory.addResource(resourceTemplate);
 
 const mcpController = new MCPController<Request, Response>(sessionStorage, authenticationGateway, mcpServerFactory);
 

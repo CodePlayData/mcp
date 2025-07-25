@@ -68,31 +68,56 @@ export type ResourceTemplate = {
     mimeType?: string
 };
 
+type ResourceInput = {
+    schema: ResourceSchema
+} | {
+    template: ResourceTemplate
+};
+
 export abstract class Resource {
     public server: Server | undefined = undefined;
 
-    protected constructor(readonly schema?: ResourceSchema, readonly template?: ResourceTemplate) {
-        if (!schema && !template) {
-            throw new Error("Resource must have either a schema or a template, but not both.");
-        }
-    };
+    protected constructor(readonly input: ResourceInput) {};
 
     setServer(server: Server) {
         this.server = server;
         return this;
     };
-    protected abstract handle(request: ReadResourceRequest, extra: RequestHandlerExtra<any, any>): Promise<ReadResourceResult>;
-    get requestHandler() {
-        return this.handle.bind(this);
-    };
-    protected createTextResource(uri: string, text: string, mimeType?: string): TextResourceContent {
+    abstract handle(request: ReadResourceRequest, extra: RequestHandlerExtra<any, any>): Promise<ReadResourceResult>;
+
+    protected createTextResource(uri: string, content: any, mimeType?: string): TextResourceContent {
+        const text = JSON.stringify(content);
         return {
             uri,
             text,
             mimeType
         };
     };
-    protected createBlobResource(uri: string, blob: string, mimeType?: string): BlobResourceContent {
+    private isBase64(str: string): boolean {
+        try {
+            return Buffer.from(str, 'base64').toString('base64') === str;
+        } catch (e) {
+            return false;
+        }
+    };
+    private convertToBase64(content: any): string {
+        if (typeof content === 'string' && this.isBase64(content)) {
+            return content;
+        }
+        if (typeof content === 'string') {
+            return Buffer.from(content).toString('base64');
+        }
+        if (Buffer.isBuffer(content)) {
+            return content.toString('base64');
+        }
+        if (typeof content === 'object') {
+            return Buffer.from(JSON.stringify(content)).toString('base64');
+        }
+        return Buffer.from(String(content)).toString('base64');
+    };
+
+    protected createBlobResource(uri: string, content: any, mimeType?: string): BlobResourceContent {
+        const blob = this.convertToBase64(content);
         return {
             uri,
             blob,

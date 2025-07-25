@@ -91,9 +91,5 @@ export abstract class Tool {
         this.server = server;
         return this;
     };
-    protected abstract handle(request: CallToolRequest, extra: RequestHandlerExtra<any, any>): Promise<CallToolResult>;
-    // O requestHandler agora é um getter que retorna uma função bound ao this
-    get requestHandler() {
-        return this.handle.bind(this);
-    };
+    abstract handle(request: CallToolRequest, extra: RequestHandlerExtra<any, any>): Promise<CallToolResult>;
 }

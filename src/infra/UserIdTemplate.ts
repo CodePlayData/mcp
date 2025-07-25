@@ -1,4 +1,4 @@
-// @filename: UserIdResource.ts
+// @filename: UserIdTemplate.ts
 
 /*
     The MCP TypeScript wrapper.
@@ -18,24 +18,28 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-import { ReadResourceRequest, ReadResourceResult, Resource } from "../core/Resource.js";
+import { Resource } from "../core/Resource.js";
 import { RequestHandlerExtra } from "@modelcontextprotocol/sdk/shared/protocol.js";
 
-const schema = {
-    uri: "data://pedro",
+const template = {
     name: "User data identification.",
-    mimeType: "text/plain"
+    uriTemplate: "data://{ user }"
 };
 
-export class UserIdResource extends Resource {
+export class UserIdTemplate extends Resource {
     constructor() {
-        super({ schema });
+        super({ template });
     };
 
-    async handle(request: ReadResourceRequest, extra: RequestHandlerExtra<any, any>): Promise<ReadResourceResult> {
-        const uri = request.params.uri;
-        const content = { "name": "Pedro Paulo", "id": "1234" }
-        const textResource = this.createTextResource(uri, content);
-        return Promise.resolve({ contents: [textResource] })
+    async handle(request: any, extra: RequestHandlerExtra<any, any>): Promise<any> {
+        const uri = request.params.uriTemplate;
+        const userRegex = /data\/\/:(.+)/;
+        const match = uri.match(userRegex);
+        const userName = match ? match[1] : "unknown";
+
+        console.log(userName)
+
+        const content = `Hi, ${ userName }!`
+        return this.createTextResource(uri, content);
     };
 }

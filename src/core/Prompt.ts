@@ -60,10 +60,8 @@ export type GetPromptRequest = {
 export abstract class Prompt {
     protected constructor(readonly schema: PromptSchema) {};
 
-    protected abstract handle(request: GetPromptRequest, extra: RequestHandlerExtra<any, any>): Promise<GetPromptResult>;
-    get requestHandler() {
-        return this.handle.bind(this);
-    };
+    abstract handle(request: GetPromptRequest, extra: RequestHandlerExtra<any, any>): Promise<GetPromptResult>;
+
     protected createMessage(role: string, text: string): PromptMessage {
         return {
             role,
