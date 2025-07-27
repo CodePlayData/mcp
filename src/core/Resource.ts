@@ -20,12 +20,35 @@
 
 import { RequestHandlerExtra } from "@modelcontextprotocol/sdk/shared/protocol.js";
 import { Server }  from "@modelcontextprotocol/sdk/server/index.js";
+import {ResourceStore} from "../app/ResourceStore";
+
+
+export type ResourceUpdatedNotification = {
+    method: 'notifications/resources/updated';
+    uri: string;
+    params?: {
+        uri: string;
+        _meta?: Record<string, any>;
+        [key: string]: any;
+    };
+};
+
+export type Owners = 'user' | 'assistant';
+
+export type Annotations = {
+    audience?: Owners[],
+    priority?: number,
+    lastModified?: string
+};
 
 export type ResourceSchema = {
     uri: string
     name: string
+    title?: string
     description?: string
     mimeType?: string
+    size?: number
+    annotations?: Annotations
     [key: string]: unknown
 };
 
@@ -66,6 +89,7 @@ export type ResourceTemplate = {
     uriTemplate: string
     description?: string
     mimeType?: string
+    annotations?: Annotations
 };
 
 type ResourceInput = {
@@ -76,15 +100,13 @@ type ResourceInput = {
 
 export abstract class Resource {
     public server: Server | undefined = undefined;
-
+    protected store?: ResourceStore;
     protected constructor(readonly input: ResourceInput) {};
-
     setServer(server: Server) {
         this.server = server;
         return this;
     };
     abstract handle(request: ReadResourceRequest, extra: RequestHandlerExtra<any, any>): Promise<ReadResourceResult>;
-
     protected createTextResource(uri: string, content: any, mimeType?: string): TextResourceContent {
         const text = JSON.stringify(content);
         return {
@@ -115,7 +137,6 @@ export abstract class Resource {
         }
         return Buffer.from(String(content)).toString('base64');
     };
-
     protected createBlobResource(uri: string, content: any, mimeType?: string): BlobResourceContent {
         const blob = this.convertToBase64(content);
         return {
@@ -124,4 +145,14 @@ export abstract class Resource {
             mimeType
         };
     };
+    protected notifyUpdate(updates?: any) {
+        if (this.store && 'schema' in this.input) {
+            this.store.notifyResourceUpdate(this.input.schema.uri, updates);
+        }
+    }
+    setStore(store: ResourceStore) {
+        this.store = store;
+        return this;
+    }
+
 }

@@ -20,15 +20,31 @@
 
 import {ResourceStore} from "../app/ResourceStore.js";
 import {Server} from "@modelcontextprotocol/sdk/server/index.js";
-import {ReadResourceRequest, ReadResourceResult, ResourceSchema} from "../core/Resource";
+import {ReadResourceRequest, ReadResourceResult, ResourceSchema, ResourceUpdatedNotification} from "../core/Resource";
 import {RequestHandlerExtra} from "@modelcontextprotocol/sdk/shared/protocol.js";
 import {Resource} from "../core/Resource.js";
 
 export class InMemoryResourceStore implements ResourceStore {
     private resources: Resource[] = [];
+    private subscriptions: string[] = [];
+    private server?: Server;
 
     list(): Resource[] {
         return this.resources;
+    }
+
+    async notifyResourceUpdate(uri: string, updates: any) {
+        if (!this.server) return;
+        if (this.subscriptions.includes(uri)) {
+            const notification: ResourceUpdatedNotification = {
+                method: 'notifications/resources/updated',
+                uri,
+                params: {
+                    ...updates
+                }
+            };
+            await this.server.sendResourceUpdated(notification);
+        }
     }
 
     notify(server: Server): (request: ReadResourceRequest, extra: RequestHandlerExtra<any, any>) => Promise<ReadResourceResult> {
@@ -55,4 +71,7 @@ export class InMemoryResourceStore implements ResourceStore {
         this.resources.push(resource);
     }
 
+    subscribe(uri: string): void {
+        this.subscriptions.push(uri);
+    }
 }

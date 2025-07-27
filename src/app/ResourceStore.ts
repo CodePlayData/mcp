@@ -25,5 +25,7 @@ import {Server} from "@modelcontextprotocol/sdk/server/index.js";
 export interface ResourceStore {
     list(): Resource[];
     register(resource: Resource): void;
+    subscribe(uri: string): void;
     notify(server: Server): (request: ReadResourceRequest, extra: RequestHandlerExtra<any, any>) => Promise<ReadResourceResult>
+    notifyResourceUpdate(uri: string, updates: any): void;
 }

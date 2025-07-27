@@ -27,7 +27,7 @@ import {
     ListResourcesRequestSchema,
     ListResourceTemplatesRequestSchema,
     ListToolsRequestSchema,
-    ReadResourceRequestSchema,
+    ReadResourceRequestSchema, SubscribeRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
 import {ResourceSchema, ResourceTemplate} from "../core/Resource.js";
 import {SessionId} from "../core/SessionId.js";
@@ -39,66 +39,101 @@ export class ServerBuilder {
         private server: Server,
         private factory: McpServerFactory
     ) {}
-
+    private _setListPromptsMethod() {
+        if (this.factory['promptStore'] && this.factory['promptStore'].list().length > 0) {
+            this.server.setRequestHandler(ListPromptsRequestSchema, () => ({
+                prompts: this.factory['promptStore']!.list().map(prompt => prompt.schema)
+            }));
+        }
+    }
+    private _setGetPromptMethod() {
+        this.server.setRequestHandler(
+            GetPromptRequestSchema,
+            this.factory['promptStore']!.notify.bind(this.factory['promptStore'])
+        );
+    }
+    private _registerPromptCapabilities(listChanged?: boolean) {
+        const prompts = listChanged ? { listChanged: listChanged } : {}
+        this.server.registerCapabilities({ prompts })
+    }
     registerPrompts(): ServerBuilder {
         if (this.factory['promptStore'] && this.factory['promptStore'].list().length > 0) {
-            this.server.registerCapabilities({
-                prompts: {
-                    listChanged: true
-                }
-            });
-            this.server.setRequestHandler(ListPromptsRequestSchema, () => ({
-                prompts: this.factory['promptStore']?.list().map(prompt => prompt.schema)
-            }));
-            this.server.setRequestHandler(
-                GetPromptRequestSchema,
-                this.factory['promptStore'].notify.bind(this.factory['promptStore'])
-            );
+            this._registerPromptCapabilities(true);
+            this._setListPromptsMethod();
+            this._setGetPromptMethod();
         }
         return this;
+    }
+    private _setListResourcesMethod() {
+        let availableResources = this.factory['resourceStore']!.list();
+        this.server.setRequestHandler(ListResourcesRequestSchema, () => ({
+            resources: availableResources
+                .filter(resource => resource.input.hasOwnProperty("schema"))
+                .map(resource => (resource.input as { schema: ResourceSchema }).schema)
+        }));
+    }
+    private _setListResourceTemplatesMethod() {
+        let availableResources = this.factory['resourceStore']!.list();
+        this.server.setRequestHandler(ListResourceTemplatesRequestSchema, () => ({
+            resourceTemplates: availableResources
+                .filter(resource => resource.input.hasOwnProperty("template"))
+                .map(resource => (resource.input as { template: ResourceTemplate }).template)
+        }));
+    }
+    private _setReadResourceMethod() {
+        this.server.setRequestHandler(
+            ReadResourceRequestSchema,
+            this.factory['resourceStore']!.notify(this.server).bind(this.factory['resourceStore'])
+        );
+    }
+    private _setResourceSubscribeMethod() {
+        this.server.setRequestHandler(SubscribeRequestSchema, async (request) => {
+            const uri = request.params.uri;
+            if (this.factory['resourceStore']) {
+                this.factory['resourceStore'].subscribe(uri);
+            }
+            return {
+                subscribe: true
+            }
+        });
+    }
+    private _registerResourceCapabilities(subscribe?: boolean, listChanged?: boolean) {
+        const resources: { subscribe?: boolean; listChanged?: boolean } = {};
+        if (subscribe !== undefined) {
+            resources.subscribe = subscribe;
+        }
+        if (listChanged !== undefined) {
+            resources.listChanged = listChanged;
+        }
+        this.server.registerCapabilities({ resources });
     }
     registerResources(): ServerBuilder {
         if (this.factory['resourceStore'] && this.factory['resourceStore'].list().length > 0) {
-            let availableResources = this.factory['resourceStore'].list();
-            if (availableResources.length > 0) {
-                this.server.registerCapabilities({
-                    resources: {
-                        subscribe: true,
-                        listChanged: true
-                    }
-                });
-
-                this.server.setRequestHandler(ListResourcesRequestSchema, () => ({
-                    resources: availableResources
-                        .filter(resource => resource.input.hasOwnProperty("schema"))
-                        .map(resource => (resource.input as { schema: ResourceSchema }).schema)
-                }));
-
-                this.server.setRequestHandler(ListResourceTemplatesRequestSchema, () => ({
-                    resourceTemplates: availableResources
-                        .filter(resource => resource.input.hasOwnProperty("template"))
-                        .map(resource => (resource.input as { template: ResourceTemplate }).template)
-                }));
-
-                this.server.setRequestHandler(
-                    ReadResourceRequestSchema,
-                    this.factory['resourceStore'].notify(this.server).bind(this.factory['resourceStore'])
-                );
-            }
+            this._registerResourceCapabilities(true, true);
+            this._setListResourcesMethod();
+            this._setListResourceTemplatesMethod();
+            this._setReadResourceMethod();
+            this._setResourceSubscribeMethod();
         }
         return this;
     }
+    private _setListToolsMethod() {
+        this.server.setRequestHandler(ListToolsRequestSchema, () => ({
+            tools: this.factory['toolStore']?.list().map(tool => tool.schema)
+        }));
+    }
+    private _setCallToolMethod() {
+        this.server.setRequestHandler(CallToolRequestSchema, this.factory['toolStore']!.notify(this.server).bind(this.factory['toolStore']));
+    }
+    private _registerToolCapabilities(listChanged?: boolean) {
+        const tools = listChanged ? { listChanged: listChanged } : {}
+        this.server.registerCapabilities({ tools })
+    }
     registerTools(): ServerBuilder {
         if (this.factory['toolStore'] && this.factory['toolStore'].list().length > 0) {
-            this.server.registerCapabilities({
-                tools: {
-                    listChanged: true
-                }
-            });
-            this.server.setRequestHandler(ListToolsRequestSchema, () => ({
-                tools: this.factory['toolStore']?.list().map(tool => tool.schema)
-            }));
-            this.server.setRequestHandler(CallToolRequestSchema, this.factory['toolStore'].notify(this.server).bind(this.factory['toolStore']));
+            this._registerToolCapabilities(true);
+            this._setListToolsMethod();
+            this._setCallToolMethod();
         }
         return this;
     }

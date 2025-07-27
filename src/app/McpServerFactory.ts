@@ -18,22 +18,13 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-import {EventStore, StreamableHTTPServerTransport} from "@modelcontextprotocol/sdk/server/streamableHttp.js";
-import {
-    CallToolRequestSchema,
-    GetPromptRequestSchema,
-    Implementation,
-    ListPromptsRequestSchema,
-    ListResourcesRequestSchema,
-    ListResourceTemplatesRequestSchema,
-    ListToolsRequestSchema,
-    ReadResourceRequestSchema,
-} from "@modelcontextprotocol/sdk/types.js";
+import {EventStore} from "@modelcontextprotocol/sdk/server/streamableHttp.js";
+import {Implementation} from "@modelcontextprotocol/sdk/types.js";
 import {Server} from "@modelcontextprotocol/sdk/server/index.js";
 import {UserId} from "../core/UserId.js";
 import {SessionId} from "../core/SessionId.js";
 import {Prompt} from "../core/Prompt.js";
-import {Resource, ResourceSchema, ResourceTemplate} from "../core/Resource.js";
+import {Resource} from "../core/Resource.js";
 import {Tool} from "../core/Tool.js";
 import {InMemoryEventStore} from "../infra/InMemoryEventStore.js";
 import {PromptStore} from "./PromptStore.js";
@@ -81,23 +72,17 @@ export class McpServerFactory {
     ) {};
 
     addTool(tool: Tool) {
-        if(!this.toolStore) {
-            this.toolStore = new InMemoryToolStore();
-        }
+        if(!this.toolStore) this.toolStore = new InMemoryToolStore();
         this.toolStore?.register(tool);
     };
     addPrompt(prompt: Prompt) {
-        if(!this.promptStore) {
-            this.promptStore = new InMemoryPromptStore();
-        }
+        if(!this.promptStore) this.promptStore = new InMemoryPromptStore();
         this.promptStore?.register(prompt);
     };
     addResource(resource: Resource) {
-        if(!this.resourceStore) {
-            this.resourceStore = new InMemoryResourceStore();
-        }
-
-        this.resourceStore?.register(resource);
+        if(!this.resourceStore) this.resourceStore = new InMemoryResourceStore();
+        resource.setStore(this.resourceStore);
+        this.resourceStore.register(resource);
     };
 
     private _createServer(userId: UserId) {
