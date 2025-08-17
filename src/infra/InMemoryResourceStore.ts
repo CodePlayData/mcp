@@ -60,10 +60,10 @@ export class InMemoryResourceStore implements ResourceStore {
                 }
             });
 
-            if (!resource) {
-                throw new Error(`Resource ${request.params.uri} not found`);
-            }
-            return await resource.setServer(server).handle(request, extra);
+            if (!resource) throw new Error(`Resource ${request.params.uri} not found`);
+            if (!resource.handle) throw new Error(`Resource ${request.params.uri} does not implement handle method`);
+
+            return await resource.handle(request, extra);
         }
     }
 

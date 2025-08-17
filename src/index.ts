@@ -24,10 +24,26 @@ import { AuthenticationGateway } from "./interface/AuthenticationGateway.js";
 import { SessionStorage } from "./interface/SessionStorage.js"
 import { EventStore } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { Tool } from "./core/Tool.js";
-import { Resource } from "./core/Resource.js";
+import { Resource, ResourceSchema, ReadResourceRequest, ReadResourceResult, ResourceTemplate } from "./core/Resource.js";
 import { Prompt } from "./core/Prompt.js";
+import { InMemoryPromptStore } from "./infra/InMemoryPromptStore.js";
+import { FakeAuthenticationGateway } from "./infra/FakeAuthenticationGateway.js";
+import { GreeterTool } from "./infra/GreeterTool.js";
+import { CallMePrompt } from "./infra/CallMePrompt.js";
+import { UserIdResource } from "./infra/UserIdResource.js";
+import { UserIdTemplate } from "./infra/UserIdTemplate.js";
+import { InMemorySessionStorage } from "./infra/InMemorySessionStorage.js";
+import { ResourceContent } from "./core/ResourceContent.js";
+import { ResourcesList } from "./core/ResourceList.js"
 
 export {
+    InMemorySessionStorage,
+    UserIdTemplate,
+    UserIdResource,
+    CallMePrompt,
+    GreeterTool,
+    FakeAuthenticationGateway,
+    InMemoryPromptStore,
     MCPController,
     McpServerFactory,
     AuthenticationGateway,
@@ -35,5 +51,11 @@ export {
     EventStore,
     Tool,
     Resource,
-    Prompt
+    ResourceSchema,
+    ReadResourceRequest,
+    ReadResourceResult,
+    ResourceTemplate,
+    Prompt,
+    ResourceContent,
+    ResourcesList
 }

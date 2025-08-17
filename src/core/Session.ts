@@ -23,6 +23,15 @@ import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/
 import { SessionId } from "./SessionId.js";
 import { UserId } from "./UserId.js";
 
+/**
+ * Represents a user session within a server environment.
+ *
+ * @property {Date} createdAt - The date and time when the session was created.
+ * @property {Server} server - The server associated with the session.
+ * @property {StreamableHTTPServerTransport} transport - The transport mechanism being used for this session.
+ * @property {SessionId} sessionId - The unique identifier for this session.
+ * @property {UserId} userId - The unique identifier of the user associated with this session.
+ */
 export type Session = {
     createdAt: Date,
     server: Server,

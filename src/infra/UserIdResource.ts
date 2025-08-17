@@ -35,7 +35,7 @@ export class UserIdResource extends Resource {
     async handle(request: ReadResourceRequest, extra: RequestHandlerExtra<any, any>): Promise<ReadResourceResult> {
         const uri = request.params.uri;
         const content = { "name": "Pedro Paulo", "id": "1234" }
-        const textResource = this.createTextResource(uri, content);
+        const textResource = this.createTextResource(content);
         return Promise.resolve({ contents: [textResource] })
     };
 }

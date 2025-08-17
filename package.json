@@ -1,21 +1,19 @@
 {
   "name": "@codeplaydata/mcp",
-  "version": "1.2.4",
-  "main": "./src/index.js",
+  "version": "1.2.27",
+  "main": "index.js",
+  "types": "index.d.ts",
   "type": "module",
   "scripts": {
-    "build": "tsc",
-    "publish": "npm publish --access=public",
-    "dev": "node dist/main.js",
+    "build": "tsc && cp LICENSE ./dist/LICENSE && cp README.md ./dist/README.md && cp package.json ./dist/package.json",
+    "publish": "npm publish ./dist --access=public",
+    "dev": "npm run build && node --max-old-space-size=4096 ./dist/main.js",
     "inspect": "npx -y @modelcontextprotocol/inspector"
   },
   "keywords": [
     "LLM",
     "MCP",
     "Tools"
-  ],
-  "files": [
-    "src/"
   ],
   "author": "Pedro Paulo dos Santos (dr2p) - https://github.com/dr2pedro",
   "license": "AGPLv3",

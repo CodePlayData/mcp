@@ -1,4 +1,4 @@
-// @filename: UserIdTemplate.ts
+// @filename: ResourceContent.ts
 
 /*
     The MCP TypeScript wrapper.
@@ -18,15 +18,8 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-import { Resource } from "../core/Resource.js";
-
-const template = {
-    name: "User data identification.",
-    uriTemplate: "data://{ user }"
-};
-
-export class UserIdTemplate extends Resource {
-    constructor() {
-        super({ template });
-    };
+export interface ResourceContent {
+    name: string | { "pt-br": string, "en-us": string }
+    description?: string | { "pt-br"?: string, "en-us"?: string }
+    [key: string]: any
 }
