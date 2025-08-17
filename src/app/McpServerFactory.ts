@@ -128,7 +128,8 @@ export class McpServerFactory {
      *
      * @param userId - The application user id.
      * @param sessionId - The session id used to scope the transport/events.
-     * @param transportKind
+     * @param transportKind - Choose between 'stream', 'sse', or 'stdio' transports.
+     * @returns A Server instance configured with the provided capabilities.
      */
     create(userId: UserId, sessionId: SessionId, transportKind: 'stream' | 'sse' | 'stdio' = 'stream') {
         return this._createServer(userId)
