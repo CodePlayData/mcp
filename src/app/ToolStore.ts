@@ -22,8 +22,29 @@ import {CallToolRequest, CallToolResult, Tool} from "../core/Tool.js";
 import {RequestHandlerExtra} from "@modelcontextprotocol/sdk/shared/protocol.js";
 import {Server} from "@modelcontextprotocol/sdk/server/index.js";
 
+/**
+ * Abstraction for a registry of Tools exposed by the MCP server.
+ *
+ * A ToolStore is responsible for holding tool instances, registering new tools,
+ * listing them for capability advertisement, and producing a request handler
+ * to execute a tool via the MCP CallTool endpoint.
+ */
 export interface ToolStore {
+    /**
+     * Returns all tools currently registered in the store.
+     */
     list(): Tool[];
+    /**
+     * Registers a new tool in the store.
+     * @param tool - The tool instance to add.
+     */
     register(tool: Tool): void;
+    /**
+     * Produces a request handler bound to the provided Server that will
+     * execute a tool according to the given CallToolRequest.
+     *
+     * @param server - The MCP Server instance used to send progress/events.
+     * @returns An async function handling CallTool requests that resolves to a CallToolResult.
+     */
     notify(server: Server): (request: CallToolRequest, extra: RequestHandlerExtra<any, any>) => Promise<CallToolResult>
 }

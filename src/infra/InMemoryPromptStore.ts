@@ -22,13 +22,31 @@ import {PromptStore} from "../app/PromptStore.js";
 import {GetPromptRequest, GetPromptResult, Prompt} from "../core/Prompt.js";
 import {RequestHandlerExtra} from "@modelcontextprotocol/sdk/shared/protocol.js";
 
+/**
+ * Simple in-memory PromptStore used by the factory for local setups.
+ *
+ * Holds Prompt instances, supports listing for capability advertisement,
+ * and resolves a prompt by name when notified via GetPrompt requests.
+ */
 export class InMemoryPromptStore implements PromptStore {
+    /** Backing collection of registered prompts. */
     private prompts: Prompt[] = [];
 
+    /**
+     * Returns all registered prompts.
+     */
     list(): Prompt[] {
         return this.prompts;
     }
 
+    /**
+     * Resolves and delegates a GetPrompt request to the selected Prompt instance.
+     *
+     * @param request - The request specifying the prompt name and arguments.
+     * @param extra - Protocol-specific metadata passed by the server.
+     * @throws If a prompt with the given name is not found.
+     * @returns The result produced by the selected prompt.
+     */
     notify = (request: GetPromptRequest, extra: RequestHandlerExtra<any, any>): Promise<GetPromptResult> => {
         const selectedPrompt = this.prompts.find(prompt => prompt.schema.name === request.params.name)
 
@@ -39,6 +57,11 @@ export class InMemoryPromptStore implements PromptStore {
         return Promise.resolve(selectedPrompt.handle(request, extra));
     }
 
+    /**
+     * Registers a new prompt.
+     *
+     * @param prompt - The Prompt instance to add to the store.
+     */
     register(prompt: Prompt): void {
         this.prompts.push(prompt);
     }

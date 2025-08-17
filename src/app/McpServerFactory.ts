@@ -35,12 +35,29 @@ import {ResourceStore} from "./ResourceStore.js";
 import {InMemoryResourceStore} from "../infra/InMemoryResourceStore.js";
 import {ServerBuilder} from "./ServerBuilder.js";
 
+/**
+ * Factory and registry for constructing configured MCP Server/Transport pairs.
+ *
+ * Maintains in-memory stores for prompts, tools, and resources, and exposes a
+ * fluent builder to register capabilities and build a ready-to-use server.
+ * Implements a simple singleton pattern via instanceOf() for reuse.
+ */
 export class McpServerFactory {
     private static instance: McpServerFactory | null = null;
     protected promptStore: PromptStore | undefined;
     protected toolStore: ToolStore | undefined;
     protected resourceStore: ResourceStore | undefined;
 
+    /**
+     * Returns the singleton instance of the factory, initializing it if needed.
+     *
+     * @param eventStorage - Storage for streamable HTTP events; defaults to in-memory.
+     * @param promptStore - Optional prompt store; defaults to in-memory when first used.
+     * @param toolStore - Optional tool store; defaults to in-memory when first used.
+     * @param resourceStore - Optional resource store; defaults to in-memory when first used.
+     * @param MCP_SERVER_VERSION - Semantic version string advertised by the server.
+     * @param MCP_SERVER_INSTRUCTIONS - Human-readable instructions for the server.
+     */
     public static instanceOf(
         eventStorage: EventStore = new InMemoryEventStore(),
         promptStore?: PromptStore,
@@ -62,6 +79,9 @@ export class McpServerFactory {
         return McpServerFactory.instance;
     }
 
+    /**
+     * Creates a new factory. Prefer using instanceOf() to reuse a singleton.
+     */
     private constructor(
         readonly eventStorage: EventStore,
         promptStore?: PromptStore,
@@ -71,14 +91,27 @@ export class McpServerFactory {
         readonly MCP_SERVER_INSTRUCTIONS: string = "Some testing MCP server."
     ) {};
 
+    /**
+     * Registers a Tool into the tool store, creating an in-memory store on first use.
+     * @param tool - The tool instance to register.
+     */
     addTool(tool: Tool) {
         if(!this.toolStore) this.toolStore = new InMemoryToolStore();
         this.toolStore?.register(tool);
     };
+    /**
+     * Registers a Prompt into the prompt store, creating an in-memory store on first use.
+     * @param prompt - The prompt instance to register.
+     */
     addPrompt(prompt: Prompt) {
         if(!this.promptStore) this.promptStore = new InMemoryPromptStore();
         this.promptStore?.register(prompt);
     };
+    /**
+     * Registers a Resource into the resource store, creating an in-memory store on first use.
+     * Also injects the store into the resource to enable notifications.
+     * @param resource - The resource instance to register.
+     */
     addResource(resource: Resource) {
         if(!this.resourceStore) this.resourceStore = new InMemoryResourceStore();
         resource.setStore(this.resourceStore);
@@ -90,11 +123,18 @@ export class McpServerFactory {
         const serverOptions = { instructions: this.MCP_SERVER_INSTRUCTIONS };
         return new ServerBuilder(new Server(serverInfo, serverOptions), this);
     }
-    create(userId: UserId, sessionId: SessionId) {
+    /**
+     * Builds and returns a ready-to-use MCP server and transport for the given user/session.
+     *
+     * @param userId - The application user id.
+     * @param sessionId - The session id used to scope the transport/events.
+     * @param transportKind
+     */
+    create(userId: UserId, sessionId: SessionId, transportKind: 'stream' | 'sse' | 'stdio' = 'stream') {
         return this._createServer(userId)
             .registerPrompts()
             .registerResources()
             .registerTools()
-            .build(userId, sessionId);
+            .build(userId, sessionId, transportKind);
     };
 }

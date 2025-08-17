@@ -20,8 +20,23 @@
 
 import { IncomingMessage } from "node:http";
 
+/**
+ * Minimal extension of Node's IncomingMessage used by the MCP HTTP controller layer.
+ *
+ * Adds optional body parsing, a normalized headers map, and allows additional
+ * implementation-specific properties needed by transports or frameworks.
+ */
 export type BasicRequest = IncomingMessage & {
+    /**
+     * Parsed request body if present. Shape depends on upstream middleware (e.g., express.json()).
+     */
     body?: any,
+    /**
+     * A case-insensitive map of request headers used by the controller.
+     */
     headers: Record<string, any>
+    /**
+     * Permit arbitrary extra fields set by frameworks or middleware.
+     */
     [key: string]: any
 }

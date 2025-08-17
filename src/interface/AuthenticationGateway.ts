@@ -18,6 +18,17 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+/**
+ * Abstraction for retrieving an application user identifier from an authorization token.
+ *
+ * Implementations can validate, decode, or look up the token to return a stable user id.
+ */
 export interface AuthenticationGateway {
+    /**
+     * Resolves the user id represented by the provided bearer token.
+     *
+     * @param token - The bearer token (without the "Bearer " prefix).
+     * @returns A promise that resolves to the unique user id string.
+     */
     getUserId(token: string): Promise<string>;
 }

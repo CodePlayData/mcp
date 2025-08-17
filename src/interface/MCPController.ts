@@ -26,10 +26,36 @@ import { BasicRequest } from "./BasicRequest.js";
 import { BasicResponse } from "./BasicResponse.js";
 import { SessionId } from "../core/SessionId.js";
 
+/**
+ * HTTP controller that bridges incoming requests to an MCP server instance per session.
+ *
+ * It restores or creates sessions, initializes transports, and forwards the
+ * raw HTTP request/response handling to the MCP Streamable HTTP transport.
+ *
+ * @typeParam Request - Concrete request type (e.g., Express Request) extending BasicRequest.
+ * @typeParam Response - Concrete response type (e.g., Express Response) extending BasicResponse.
+ */
 export class MCPController<Request extends BasicRequest, Response extends BasicResponse> {
-    constructor(readonly sessionStorage: SessionStorage, readonly authenticationGateway: AuthenticationGateway, readonly serverFactory: McpServerFactory) {}
+    /**
+         * Creates a new MCPController.
+         *
+         * @param sessionStorage - Storage used to generate, persist, restore and delete sessions.
+         * @param authenticationGateway - Gateway used to resolve a user id from an Authorization token.
+         * @param serverFactory - Factory that builds MCP Server/Transport pairs for a given user/session id.
+         */
+        constructor(readonly sessionStorage: SessionStorage, readonly authenticationGateway: AuthenticationGateway, readonly serverFactory: McpServerFactory) {}
 
-    async handleRequest(request: Request, response: Response) {
+    /**
+         * Main entry point to process an HTTP request for the MCP endpoint.
+         *
+         * If a session id is provided and known, it forwards the request to the
+         * existing transport. Otherwise it authenticates the user, creates a new
+         * session and transport, connects the server and then processes the request.
+         *
+         * @param request - Incoming HTTP request.
+         * @param response - Outgoing HTTP response.
+         */
+        async handleRequest(request: Request, response: Response) {
         let session: Session | undefined;
         let sessionId: SessionId | undefined;
         sessionId = this.getSessionId(request, response);
@@ -49,10 +75,24 @@ export class MCPController<Request extends BasicRequest, Response extends BasicR
         await session.transport.handleRequest(request, response, request.body);
         return
     };
-    private getSessionId(request: Request, response: Response) {
+    /**
+         * Retrieves the session id from the request headers, if present.
+         *
+         * @param request - The incoming request holding headers.
+         * @param response - The outgoing response (unused here).
+         * @returns The session id string or undefined.
+         */
+        private getSessionId(request: Request, response: Response) {
         return request.headers['mcp-session-id'];
     };
-    private async getUserId(request: Request, response: Response) {
+    /**
+         * Extracts the Authorization bearer token and resolves it to a user id via the gateway.
+         *
+         * @param request - Incoming request possibly containing an Authorization header.
+         * @param response - Outgoing response (unused here).
+         * @returns The resolved user id string.
+         */
+        private async getUserId(request: Request, response: Response) {
         const rawToken = request.headers['Authorization'] as string;
         const userToken = rawToken?.replace("Bearer ", "");
         return await this.authenticationGateway.getUserId(userToken);

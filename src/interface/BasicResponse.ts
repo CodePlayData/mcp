@@ -20,6 +20,17 @@
 
 import { ServerResponse } from "node:http";
 
+/**
+ * Extension of Node's ServerResponse used by the MCP HTTP controller layer.
+ *
+ * It augments the native response with a flexible `json` field to carry
+ * arbitrary payloads produced by the MCP transport while keeping compatibility
+ * with standard Node HTTP response handling.
+ */
 export type BasicResponse = ServerResponse & {
+    /**
+     * Arbitrary JSON-serializable payload to be returned to the client.
+     * Implementations may assign any structure depending on the request.
+     */
     json: any
 };

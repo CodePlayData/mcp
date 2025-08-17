@@ -1,4 +1,4 @@
-// @filanem: InMemoryToolStore.ts
+// @filename: InMemoryToolStore.ts
 
 /*
     The MCP TypeScript wrapper.
@@ -23,13 +23,30 @@ import {ToolStore} from "../app/ToolStore";
 import {CallToolRequest, CallToolResult, Tool} from "../core/Tool";
 import {RequestHandlerExtra} from "@modelcontextprotocol/sdk/shared/protocol.js";
 
+/**
+ * Simple in-memory ToolStore used for demos/tests.
+ *
+ * Keeps Tool instances in memory, lists them for capability advertisement,
+ * and dispatches CallTool requests to the appropriate tool by name.
+ */
 export class InMemoryToolStore implements ToolStore {
+    /** Backing collection of registered tools. */
     private tools: Tool[] = [];
 
+    /**
+     * Returns all registered tools.
+     */
     list(): Tool[] {
         return this.tools
     }
 
+    /**
+     * Creates a handler that locates a Tool by name and invokes it.
+     *
+     * @param server - The MCP Server instance so tools can send progress or events.
+     * @returns An async function that handles CallTool requests.
+     * @throws If the requested tool name is not found.
+     */
     notify(server: Server): (request: CallToolRequest, extra: RequestHandlerExtra<any, any>) => Promise<CallToolResult> {
         return async (request: CallToolRequest, extra: RequestHandlerExtra<any, any>): Promise<CallToolResult> => {
             const tool = this.tools.find(tool => tool.schema.name === request.params.name);
@@ -40,6 +57,11 @@ export class InMemoryToolStore implements ToolStore {
         };
     }
 
+    /**
+     * Registers a new Tool instance.
+     *
+     * @param tool - The Tool to add to the store.
+     */
     register(tool: Tool): void {
         this.tools.push(tool);
     }

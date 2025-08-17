@@ -25,13 +25,13 @@ import { RequestHandlerExtra } from "@modelcontextprotocol/sdk/shared/protocol.j
  * the structure and properties of a prompt, including its name, optional
  * description, arguments, and any additional custom properties.
  *
- * @property {string} name - The name of the prompt.
- * @property {string} [description] - An optional description of the prompt.
- * @property {Array<Object>} [arguments] - An optional array of argument definitions for the prompt.
- * @property {string} arguments.name - The name of the argument.
- * @property {string} [arguments.description] - An optional description of the argument.
- * @property {boolean} [arguments.required] - Indicates whether the argument is mandatory. Defaults to `false` if not provided.
- * @property {Object} [key: string] - Allows additional custom properties within the schema.
+ * @property name - The name of the prompt.
+ * @property [description] - An optional description of the prompt.
+ * @property [arguments] - An optional array of argument definitions for the prompt.
+ * @property arguments.name - The name of the argument.
+ * @property [arguments.description] - An optional description of the argument.
+ * @property [arguments.required] - Indicates whether the argument is mandatory. Defaults to `false` if not provided.
+ * @property [key: string] - Allows additional custom properties within the schema.
  */
 export type PromptSchema = {
     name: string
@@ -50,10 +50,10 @@ export type PromptSchema = {
  *
  * This type is used to structure a message consisting of a role and its associated content.
  *
- * @property {string} role - The role of the sender of the message (e.g., "user", "system").
- * @property {Object} content - The content of the message.
- * @property {string} content.type - The type of the content (e.g., "text", "image").
- * @property {string} content.text - The textual data of the message.
+ * @property role - The role of the sender of the message (e.g., "user", "system").
+ * @property content - The content of the message.
+ * @property content.type - The type of the content (e.g., "text", "image").
+ * @property content.text - The textual data of the message.
  */
 export type PromptMessage = {
     role: string,
@@ -67,8 +67,8 @@ export type PromptMessage = {
  * Represents the result of a get prompt request, including its description
  * and an array of prompt messages.
  *
- * @property {string} description - A textual description of the prompt result.
- * @property {PromptMessage[]} messages - An array containing messages related to the prompt.
+ * @property description - A textual description of the prompt result.
+ * @property messages - An array containing messages related to the prompt.
  */
 export type GetPromptResult = {
     description: string
@@ -78,13 +78,13 @@ export type GetPromptResult = {
 /**
  * Represents a request object for fetching a specific prompt with optional arguments and metadata.
  *
- * @property {"prompts/get"} method - Specifies the method type for retrieving the prompt.
- * @property {Object} params - Contains the parameters required for the request.
- * @property {string} params.name - The unique name or identifier of the prompt to fetch.
- * @property {Object<string, string>} [params.arguments] - Optional key-value pairs specifying additional arguments for the prompt.
- * @property {Object} [params._meta] - Optional metadata for internal use.
- * @property {string | number} [params._meta.progressToken] - Token used to track the progress of operations, if applicable.
- * @property {unknown} [params[key: string]] - Additional dynamic properties within the parameters object.
+ * @property method - Specifies the method type for retrieving the prompt.
+ * @property params - Contains the parameters required for the request.
+ * @property params.name - The unique name or identifier of the prompt to fetch.
+ * @property [params.arguments] - Optional key-value pairs specifying additional arguments for the prompt.
+ * @property [params._meta] - Optional metadata for internal use.
+ * @property [params._meta.progressToken] - Token used to track the progress of operations, if applicable.
+ * @property [params[key: string]] - Additional dynamic properties within the parameters object.
  */
 export type GetPromptRequest = {
     method: "prompts/get"
@@ -121,9 +121,9 @@ export abstract class Prompt {
     /**
      * Creates a message object with the given role and text content.
      *
-     * @param {string} role - The role associated with the message (e.g., sender or recipient identifier).
-     * @param {string} text - The text content of the message.
-     * @return {PromptMessage} Returns a message object containing the role and text details.
+     * @param role - The role associated with the message (e.g., sender or recipient identifier).
+     * @param text - The text content of the message.
+     * @return Returns a message object containing the role and text details.
      */
     protected createMessage(role: string, text: string): PromptMessage {
         return {

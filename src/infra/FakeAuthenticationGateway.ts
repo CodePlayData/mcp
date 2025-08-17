@@ -20,7 +20,19 @@
 
 import { AuthenticationGateway } from "../interface/AuthenticationGateway.js";
 
+/**
+ * Test/dummy implementation of AuthenticationGateway.
+ *
+ * Always resolves to a fixed user id, regardless of the provided token.
+ * Useful in development and examples where real authentication is not needed.
+ */
 export class FakeAuthenticationGateway implements AuthenticationGateway {
+    /**
+     * Returns a hard-coded user id for any token.
+     *
+     * @param token - Ignored. Present to satisfy the interface contract.
+     * @returns A promise resolving to a static user id.
+     */
     getUserId(token: string): Promise<string> {
         return Promise.resolve("1234567890");
     };

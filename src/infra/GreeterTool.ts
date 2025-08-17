@@ -21,7 +21,17 @@
 import { CallToolRequest, CallToolResult, Tool } from "../core/Tool.js";
 import { RequestHandlerExtra } from "@modelcontextprotocol/sdk/shared/protocol.js";
 
+/**
+ * GreeterTool is a simple example Tool that returns a greeting message for the provided name.
+ *
+ * This tool showcases how to implement a Tool by defining an input JSON schema and
+ * handling the CallToolRequest to produce a CallToolResult consumable by an MCP client.
+ */
 export class GreeterTool extends Tool {
+    /**
+     * Creates a new Greeter tool with a single string input argument "name".
+     * The tool responds with a text content greeting.
+     */
     constructor() {
         super({
             name: "Greeter",
@@ -37,6 +47,13 @@ export class GreeterTool extends Tool {
         });
     };
 
+    /**
+     * Handles an MCP CallToolRequest by reading the "name" argument and returning a greeting.
+     *
+     * @param request - The tool invocation request containing the input arguments.
+     * @param extra - Extra request metadata supplied by the MCP framework.
+     * @returns A CallToolResult with a single text content greeting the provided name.
+     */
     async handle(request: CallToolRequest, extra: RequestHandlerExtra<any, any>): Promise<CallToolResult> {
         console.log("tool request received: ", request)
         console.log("extra: ", extra)

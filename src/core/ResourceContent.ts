@@ -18,8 +18,27 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+/**
+ * Describes the shape of an application's domain object used to materialize MCP resources.
+ *
+ * Important: This is not the same as the ResourceContent type declared in Resource.ts, which
+ * represents the payload of a ReadResourceResult item. This interface models your source data
+ * from which a ResourceSchema will be generated per item by ResourcesList.
+ *
+ * Conventions and localization:
+ * - name can be either a plain string or an object with i18n variants for "pt-br" and "en-us".
+ * - description is optional and can also be a string or an i18n map with the same keys.
+ *
+ * Extensibility:
+ * - You may add arbitrary properties. One of those properties is typically used as the indexKey
+ *   in ResourcesList.getResources(indexKey, language) and will be appended to the base URI to
+ *   produce each resource's unique URI.
+ */
 export interface ResourceContent {
+    /** Display name (plain or localized). */
     name: string | { "pt-br": string, "en-us": string }
+    /** Optional description (plain or localized). */
     description?: string | { "pt-br"?: string, "en-us"?: string }
+    /** Any extra fields from your domain model; one of them may be used as indexKey. */
     [key: string]: any
 }

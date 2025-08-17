@@ -21,7 +21,16 @@
 import { GetPromptRequest, GetPromptResult, Prompt } from "../core/Prompt.js";
 import { RequestHandlerExtra } from "@modelcontextprotocol/sdk/shared/protocol.js";
 
+/**
+ * A sample Prompt that lets the user specify how the LLM should address them.
+ *
+ * Demonstrates how to implement a Prompt by declaring input arguments and
+ * producing a GetPromptResult with one or more messages.
+ */
 export class CallMePrompt extends Prompt {
+    /**
+     * Declares a single required argument "honorifics" to be used in the message.
+     */
     constructor() {
         super({
             name: "Call me prompt",
@@ -34,6 +43,13 @@ export class CallMePrompt extends Prompt {
         });
     };
 
+    /**
+     * Builds the prompt content based on the provided arguments.
+     *
+     * @param request - The GetPromptRequest carrying the prompt name and arguments.
+     * @param extra - Extra metadata supplied by the MCP framework.
+     * @returns A GetPromptResult with a single user message instructing the honorific.
+     */
     handle(request: GetPromptRequest, extra: RequestHandlerExtra<any, any>): Promise<GetPromptResult> {
         console.log("a prompt was consulted: ", request)
         console.log("extra: ", extra)

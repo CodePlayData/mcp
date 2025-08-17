@@ -24,15 +24,38 @@ import {ReadResourceRequest, ReadResourceResult, ResourceSchema, ResourceUpdated
 import {RequestHandlerExtra} from "@modelcontextprotocol/sdk/shared/protocol.js";
 import {Resource} from "../core/Resource.js";
 
+/**
+ * In-memory implementation of the ResourceStore.
+ *
+ * Maintains registered Resource instances and simple URI-based subscriptions.
+ * Provides a ReadResource handler that dispatches to the appropriate Resource.
+ *
+ * Note: This class includes a server field intended to send resource update
+ * notifications. In this minimal implementation, the server is not assigned.
+ * For push updates to work, ensure the instance captures the server reference
+ * (e.g., when wiring the notify handler) before calling notifyResourceUpdate.
+ */
 export class InMemoryResourceStore implements ResourceStore {
+    /** Backing collection of registered resources. */
     private resources: Resource[] = [];
+    /** List of URIs for which clients subscribed to receive updates. */
     private subscriptions: string[] = [];
+    /** MCP Server reference, used to send ResourceUpdated notifications. */
     private server?: Server;
 
+    /**
+     * Returns all registered resources.
+     */
     list(): Resource[] {
         return this.resources;
     }
 
+    /**
+     * Attempts to send a resource update notification to subscribers of the URI.
+     *
+     * @param uri - The resource URI that changed.
+     * @param updates - Implementation-defined payload describing the change.
+     */
     async notifyResourceUpdate(uri: string, updates: any) {
         if (!this.server) return;
         if (this.subscriptions.includes(uri)) {
@@ -47,6 +70,13 @@ export class InMemoryResourceStore implements ResourceStore {
         }
     }
 
+    /**
+     * Creates a handler to resolve ReadResource requests by matching the requested URI.
+     *
+     * @param server - The MCP Server instance, typically used to send events.
+     * @returns An async function that finds the matching Resource and delegates to it.
+     * @throws If the resource is not found or does not implement handle().
+     */
     notify(server: Server): (request: ReadResourceRequest, extra: RequestHandlerExtra<any, any>) => Promise<ReadResourceResult> {
         return async (request: ReadResourceRequest, extra: RequestHandlerExtra<any, any>): Promise<ReadResourceResult> => {
             let resource: Resource | undefined;
@@ -67,10 +97,20 @@ export class InMemoryResourceStore implements ResourceStore {
         }
     }
 
+    /**
+     * Registers a new Resource instance.
+     *
+     * @param resource - The Resource to add to the store.
+     */
     register(resource: Resource): void {
         this.resources.push(resource);
     }
 
+    /**
+     * Subscribes to updates for a specific resource URI.
+     *
+     * @param uri - The resource URI to subscribe to.
+     */
     subscribe(uri: string): void {
         this.subscriptions.push(uri);
     }

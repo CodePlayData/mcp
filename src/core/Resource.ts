@@ -59,9 +59,9 @@ export type Owners = 'user' | 'assistant';
 /**
  * Annotations object to describe metadata associated with an entity.
  *
- * @property {Owners[]} [audience] - Specifies the target audience or owners to whom the annotation applies.
- * @property {number} [priority] - Indicates the priority level associated with the annotation, where a lower number represents higher priority.
- * @property {string} [lastModified] - ISO 8601 formatted timestamp indicating the last modification date of the annotation.
+ * @property [audience] - Specifies the target audience or owners to whom the annotation applies.
+ * @property [priority] - Indicates the priority level associated with the annotation, where a lower number represents higher priority.
+ * @property [lastModified] - ISO 8601 formatted timestamp indicating the last modification date of the annotation.
  */
 export type Annotations = {
     audience?: Owners[],
@@ -129,9 +129,8 @@ export type ReadResourceRequest = {
  * This type is commonly used for managing resources with identifiable URIs and
  * associated MIME type information when applicable.
  *
- * @typedef {Object} ResourceContent
- * @property {string} uri - The URI of the resource.
- * @property {string} [mimeType] - The optional MIME type of the resource, indicating the data format.
+ * @property uri - The URI of the resource.
+ * @property [mimeType] - The optional MIME type of the resource, indicating the data format.
  */
 export type ResourceContent = {
     uri: string
@@ -143,13 +142,12 @@ export type ResourceContent = {
  * It includes additional metadata properties, such as name, URI template, description,
  * MIME type, annotations, and the actual text content.
  *
- * @property {string} [name] - Optional. The name of the text resource.
- * @property {string} [uriTemplate] - Optional. A URI template associated with the resource.
- * @property {string} [description] - Optional. A brief description of the text resource.
- * @property {string} [mimeType] - Optional. The MIME type of the resource's text content.
- * @property {Annotations} [annotations] - Optional. An object representing additional metadata or annotations.
- * @property {string} text - The actual textual content of the resource.
- * @extends {ResourceContent}
+ * @property [name] - Optional. The name of the text resource.
+ * @property [uriTemplate] - Optional. A URI template associated with the resource.
+ * @property [description] - Optional. A brief description of the text resource.
+ * @property [mimeType] - Optional. The MIME type of the resource's text content.
+ * @property [annotations] - Optional. An object representing additional metadata or annotations.
+ * @property text - The actual textual content of the resource.
  */
 export type TextResourceContent = ResourceContent & {
     name?: string
@@ -164,13 +162,12 @@ export type TextResourceContent = ResourceContent & {
  * Represents blob resource content, extending the properties of the ResourceContent type
  * with additional attributes specifically relevant to blob data.
  *
- * @property {string} [name] - An optional name for the resource.
- * @property {string} [uriTemplate] - An optional URI template associated with the resource.
- * @property {string} [description] - An optional description of the resource.
- * @property {string} [mimeType] - An optional MIME type describing the format of the blob.
- * @property {Annotations} [annotations] - An optional set of annotations for metadata or additional information.
- * @property {string} blob - The binary data of the resource in string format.
- * @extends ResourceContent
+ * @property [name] - An optional name for the resource.
+ * @property [uriTemplate] - An optional URI template associated with the resource.
+ * @property [description] - An optional description of the resource.
+ * @property [mimeType] - An optional MIME type describing the format of the blob.
+ * @property [annotations] - An optional set of annotations for metadata or additional information.
+ * @property blob - The binary data of the resource in string format.
  */
 export type BlobResourceContent = ResourceContent & {
     name?: string
@@ -208,12 +205,12 @@ export type ReadResourceResult = {
 /**
  * Represents a resource template with properties and metadata to describe it.
  *
- * @property {string} name - The name of the resource template. **Will be used as tokens in prompt**.
- * @property {string} uriTemplate - The URI template associated with the resource.
- * @property {string} [description] - An optional description of the resource template. **Will be used as tokens in prompt**.
- * @property {string} [mimeType] - An optional MIME type information for the resource.
- * @property {Annotations} [annotations] - Optional annotations providing additional metadata.
- * @property {unknown} [p] - Additional unknown properties identified by string keys.
+ * @property name - The name of the resource template. **Will be used as tokens in prompt**.
+ * @property uriTemplate - The URI template associated with the resource.
+ * @property [description] - An optional description of the resource template. **Will be used as tokens in prompt**.
+ * @property [mimeType] - An optional MIME type information for the resource.
+ * @property [annotations] - Optional annotations providing additional metadata.
+ * @property [p] - Additional unknown properties identified by string keys.
  */
 export type ResourceTemplate = {
     [p: string]: unknown
@@ -254,15 +251,11 @@ export abstract class Resource {
      * Represents the server instance that may be either a defined `Server` object or `undefined`.
      * This variable is typically used to store the instance of a server, which can later be initialized
      * or updated as needed within the application.
-     *
-     * @type {(Server | undefined)}
      */
     public server: Server | undefined = undefined;
     /**
      * Represents the store containing resource data.
      * It is an optional property that may or may not be present.
-     *
-     * @type {?ResourceStore}
      */
     protected store?: ResourceStore;
 
@@ -271,8 +264,8 @@ export abstract class Resource {
      * The constructor is protected, which means it can only be called by the class itself
      * or its subclasses.
      *
-     * @param {ResourceInput} input - The input resource required to initialize the instance.
-     * @return {void} Does not return a value.
+     * @param input - The input resource required to initialize the instance.
+     * @return Does not return a value.
      */
     protected constructor(readonly input: ResourceInput) {};
 
@@ -295,8 +288,8 @@ export abstract class Resource {
     /**
      * Converts the given content into a BlobResourceContent object containing a base64-encoded blob and resource schema.
      *
-     * @param {any} content - The content to be converted into a blob.
-     * @return {BlobResourceContent} The constructed BlobResourceContent object with the base64-encoded blob and schema.
+     * @param content - The content to be converted into a blob.
+     * @return The constructed BlobResourceContent object with the base64-encoded blob and schema.
      */
     protected createBlobResource(content: any): BlobResourceContent {
         const blob = this.convertToBase64(content);
@@ -309,8 +302,8 @@ export abstract class Resource {
     /**
      * Notifies the store about an update to a resource, if the store and input schema exist.
      *
-     * @param {any} [updates] - Optional updates to be passed to the store.
-     * @return {void} This method does not return a value.
+     * @param [updates] - Optional updates to be passed to the store.
+     * @return This method does not return a value.
      */
     protected notifyUpdate(updates?: any) {
         if (this.store && 'schema' in this.input) {
@@ -380,9 +373,9 @@ export abstract class Resource {
     /**
      * Handles a read resource request and processes the given request data.
      *
-     * @param {ReadResourceRequest} request - The request object containing details for reading the resource.
-     * @param {RequestHandlerExtra<any, any>} extra - Additional handler-specific parameters or data.
-     * @return {Promise<ReadResourceResult>} A promise that resolves to the result of the read resource operation.
+     * @param request - The request object containing details for reading the resource.
+     * @param extra - Additional handler-specific parameters or data.
+     * @return A promise that resolves to the result of the read resource operation.
      */
     handle?(request: ReadResourceRequest, extra: RequestHandlerExtra<any, any>): Promise<ReadResourceResult>;
 }

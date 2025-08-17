@@ -19,14 +19,39 @@
 */
 
 
+/**
+ * Utilities to transform a list of domain items into MCP Resource instances.
+ *
+ * This module bridges between your application data (typed by core/ResourceContent.ts)
+ * and the MCP Resource abstraction (core/Resource.ts). Given a base URI and a list of
+ * items, it computes a ResourceSchema per item and returns Resource objects that can be
+ * handled by the MCP server.
+ */
 import {ReadResourceRequest, ReadResourceResult, Resource, ResourceSchema} from "./Resource.js";
 import { ResourceContent } from "./ResourceContent.js";
 
+/**
+ * Minimal schema information required to build per-item ResourceSchema entries.
+ *
+ * - uri: Base URI prefix for all items. If it doesn't end with '/', a slash will be added.
+ * - mimeType: Optional default MIME type inherited by each generated schema.
+ */
 export type MinimalResourceSchema = {
     uri: string;
     mimeType?: string;
 };
 
+/**
+ * Base class that adapts a Resource to serve a given content object with a specific schema.
+ *
+ * Behavior:
+ * - Delegates to Resource.createTextResource when the schema's mimeType is one of
+ *   application/json, application/xml, or text/plain; otherwise uses createBlobResource.
+ * - Returns a ReadResourceResult with a single content item.
+ *
+ * Note: The actual serialization is performed by Resource helpers; here we only choose which
+ * representation to produce based on mimeType.
+ */
 class BaseResource extends Resource {
     constructor(protected resourceData: ResourceContent, readonly resourceSchema: ResourceSchema) {
         super({ schema: resourceSchema });
@@ -49,15 +74,52 @@ class BaseResource extends Resource {
     }
 }
 
+/**
+ * Concrete Resource implementation parametrized by:
+ * - C: the source content type (your domain object).
+ * - S: the concrete ResourceSchema used for this instance.
+ */
 class ResourceImpl<C extends ResourceContent, S extends ResourceSchema> extends BaseResource {
     constructor(resourceContent: C, resourceSchema: S) {
         super(resourceContent, resourceSchema);
     }
 }
 
+/**
+ * Helper to derive Resource instances from a list of domain content objects.
+ *
+ * Generics:
+ * - C: Array of ResourceContent items describing your domain data.
+ * - S: MinimalResourceSchema (or extension) that supplies baseUri and optional default mimeType.
+ *
+ * Instantiation:
+ * - Constructor is protected on purpose. Subclass this and expose a factory, or create a
+ *   subclass that hardcodes base settings for your use case.
+ *
+ * How getResources works:
+ * - indexKey selects the property from each content item whose value will be appended to the
+ *   base URI to form the unique resource URI (e.g., base uri "mcp://items/" + content[id]).
+ * - language selects which localized text to use when name/description are provided as maps.
+ * - title is taken only if present as a plain string in the item.
+ * - mimeType is copied from defaultResourceSchema (if present) to each item schema.
+ * - The resulting Resource list can be registered in the ResourceStore.
+ *
+ * Edge cases and notes:
+ * - If base URI does not end with '/', one is inserted to avoid malformed URIs.
+ * - If description is an object but missing the selected language, it falls back to undefined.
+ * - name must exist; when localized, the chosen language must be present or a runtime undefined
+ *   access may occur. Provide both "pt-br" and "en-us" keys when using localized names.
+ */
 export class ResourcesList<C extends ResourceContent[], S extends MinimalResourceSchema = MinimalResourceSchema> {
     protected constructor(protected resourceContents: C, protected defaultResourceSchema: S) {}
 
+    /**
+     * Builds Resource instances for all items in resourceContents.
+     *
+     * @param indexKey - Property name whose value is appended to the base URI.
+     * @param language - Preferred language when content has localized fields. Defaults to 'en-us'.
+     * @returns Array of Resource ready to be advertised and read by the MCP server.
+     */
     getResources(indexKey: keyof ResourceContent, language: 'pt-br' | 'en-us' = 'en-us'): Resource[] {
         return this.resourceContents.map(content => {
             const name = typeof content.name === 'string' ? content.name : content.name[language as keyof typeof content.name];
